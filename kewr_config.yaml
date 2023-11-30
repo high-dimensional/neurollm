@@ -1,0 +1,77 @@
+vars:
+  data_size:  25000
+  seg_data_path: data/segmentation_data
+  ner_data_path: data/ner_data
+  cls_data_path: data/cls_data
+  neg_data_path: data/neg_data
+  spacy_ner_model: "/home/hwatkins/Desktop/neuroNLP/packages/en_full_neuro_model_neg2/en_full_neuro_model/en_full_neuro_model-1.8"
+  source_data_path: "/home/hwatkins/Desktop/neuroData/processed_reports/reports_with_embedding.csv"
+  base_model: 'dmis-lab/biobert-v1.1'
+  batch_size: 8
+  epochs: 5
+  lr: 1e-4
+  wd: 0.001
+  warmup: 1000
+  dropout: 0.4
+
+stages:
+  - name: get_seg_data
+    help: "retrieve and split the segmentation data"
+    cmd: python src/neurollm/preprocess_seg_data.py ${vars.source_data_path} --size=${vars.data_size} --outdir=${vars.seg_data_path}
+    deps: 
+      - ${vars.source_data_path}
+    outs:
+      - ${vars.seg_data_path}
+  - name: train_segmentation
+    help: "train the segmentation model"
+    cmd: python src/neurollm/train_segmentation.py ${vars.seg_data_path} ${vars.base_model} --warmup=${vars.warmup} --dropout=${vars.dropout} --lr=${vars.lr} --epochs=${vars.epochs} --wd=${vars.wd} --batch=${vars.batch_size} --outdir=models/segmentation
+    deps:
+      - ${vars.seg_data_path}
+    outs:
+      - models/segmentation
+  - name: get_ner_data
+    help: "retrieve and create ner training data"
+    cmd: python src/neurollm/preprocess_ner_data.py ${vars.source_data_path} ${vars.spacy_ner_model} --size=${vars.data_size} --outdir=${vars.ner_data_path}
+    deps:
+      - ${vars.source_data_path}
+      - ${vars.spacy_ner_model}
+    outs:
+      - ${vars.ner_data_path}
+  - name: train_ner
+    help: "train huggingface ner model"
+    cmd: python src/neurollm/train_ner.py ${vars.ner_data_path} ${vars.base_model} --warmup=${vars.warmup} --dropout=${vars.dropout} --lr=${vars.lr} --epochs=${vars.epochs} --wd=${vars.wd} --batch=${vars.batch_size} --outdir=models/ner
+    deps:
+      - ${vars.ner_data_path}
+    outs:
+      - models/ner
+  - name: get_cls_data
+    help: "retireve and process normality classifier data"
+    cmd: python src/neurollm/preprocess_cls_data.py  ${vars.source_data_path} --size=${vars.data_size} --outdir=${vars.cls_data_path}
+    deps:
+     - ${vars.source_data_path}
+    outs:
+     - ${vars.cls_data_path}
+  - name: train_cls
+    help: "train normality classifier model"
+    cmd: python src/neurollm/train_cls.py ${vars.cls_data_path} ${vars.base_model} --warmup=${vars.warmup} --lr=${vars.lr} --epochs=${vars.epochs} --wd=${vars.wd} --batch=${vars.batch_size} --outdir=models/cls
+    deps:
+     - ${vars.cls_data_path}
+    outs:
+     - models/cls
+  - name: get_negation_data
+    help: "retrieve and create negation training data"
+    cmd: python src/neurollm/preprocess_neg_data.py ${vars.source_data_path} ${vars.spacy_ner_model} --size=${vars.data_size} --outdir=${vars.neg_data_path}
+    deps:
+      - ${vars.source_data_path}
+      - ${vars.spacy_ner_model}
+    outs:
+      - ${vars.neg_data_path}
+  - name: train_negation
+    help: "train huggingface ner for negation model"
+    cmd: python src/neurollm/train_neg.py ${vars.neg_data_path} ${vars.base_model} --warmup=${vars.warmup} --dropout=${vars.dropout} --lr=${vars.lr} --epochs=${vars.epochs} --wd=${vars.wd} --batch=${vars.batch_size} --outdir=models/negation
+    deps:
+      - ${vars.neg_data_path}
+    outs:
+      - models/negation
+
+

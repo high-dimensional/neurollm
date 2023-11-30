@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "neurollm"  # Required
+dynamic = ["version"]
+description = "llm-based nlp pipelines for neuro reports"  # Optional
+readme = "README.md" # Optional
+license = {file = "LICENSE"}
+keywords = ["NLP", "neuroradiology"]
+requires-python = ">=3.7"
+authors = [
+  {name = "Henry Watkins", email = "h.watkins@ucl.ac.uk" } # Optional
+]
+dependencies = [
+  "torch",
+  "transformers",
+  "datasets",
+  "spacy",
+  "kewr",
+]
+
+[project.urls]
+#Documentation = "https://github.com/unknown/neuronlp#readme"
+#Issues = "https://github.com/unknown/neuronlp/issues"
+#Source = "https://github.com/unknown/neuronlp"
+
+[tool.hatch.version]
+path = "src/neurollm/__about__.py"
+
+
+[tool.hatch.envs.default]
+dependencies = [
+  "pytest",
+  "black",
+  "isort",
+]
+[tool.hatch.envs.default.scripts]
+test = "pytest tests"
+fmt = "black . ; isort ."
